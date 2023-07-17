@@ -1,15 +1,17 @@
 import { conflictError } from "../errors/conflict-error";
 import { notFoundError } from "../errors/notfound-error";
-import fruitsRepository, { Fruit } from "../repositories/fruits-repository";
+import fruitsRepository from "../repositories/fruits-repository";
+import { Fruit } from "@prisma/client";
 
 export type FruitInput = Omit<Fruit, "id">;
 
-function getFruits() {
-  return fruitsRepository.getFruits();
+async function getFruits() {
+  const fruits = await fruitsRepository.getFruits();
+  return fruits;
 }
 
-function getSpecificFruit(id: number) {
-  const fruit = fruitsRepository.getSpecificFruit(id);
+async function getSpecificFruit(id: number) {
+  const fruit = await fruitsRepository.getSpecificFruit(id);
   if (!fruit) {
     throw notFoundError();
   }
@@ -17,19 +19,21 @@ function getSpecificFruit(id: number) {
   return fruit;
 }
 
-function createFruit(fruit: FruitInput): void {
-  const fruitAlreadyRegistered = fruitsRepository.getSpecificFruitByName(fruit.name);
+async function createFruit(fruit: FruitInput) {
+  const fruitAlreadyRegistered = await fruitsRepository.getSpecificFruitByName(
+    fruit.name
+  );
   if (fruitAlreadyRegistered) {
     throw conflictError();
   }
 
-  fruitsRepository.insertFruit(fruit);
+  await fruitsRepository.insertFruit(fruit);
 }
 
 const fruitsService = {
   getFruits,
   getSpecificFruit,
-  createFruit
-}
+  createFruit,
+};
 
 export default fruitsService;

@@ -1,12 +1,15 @@
-import { Fruit } from "repositories/fruits-repository";
+import prisma from "database";
+import { faker } from "@faker-js/faker";
 
-let currentId = 1;
-
-export function createFruit(name: string, price: number): Fruit {
-  const fruit: Fruit = {
-    id: currentId++,
-    name,
-    price,
-  };
-  return fruit;
+export async function buildFruit(name?: string, price?: number) {
+  // criando cenário de teste
+  return await prisma.fruit.create({
+    data: {
+      name: name || faker.commerce.product(),
+      price: price || faker.number.int({
+          min: 1,
+          max: 99,
+        }),
+    },
+  });
 }

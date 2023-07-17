@@ -1,38 +1,37 @@
-import fruits from "../data/fruits";
 import { FruitInput } from "../services/fruits-service";
-
-export type Fruit = {
-  id: number,
-  name: string,
-  price: number
-}
+import prisma from "../database";
 
 function getFruits() {
-  return fruits;
+  return prisma.fruit.findMany();
 }
 
-function getSpecificFruit(id: number): Fruit | undefined {
-  return fruits.find(fruit => {
-    return fruit.id === id;
+function getSpecificFruit(id: number) {
+  return prisma.fruit.findUnique({
+    where: {
+      id,
+    },
   });
 }
 
-function getSpecificFruitByName(name: string): Fruit | undefined {
-  return fruits.find(fruit => {
-    return fruit.name === name;
+function getSpecificFruitByName(name: string) {
+  return prisma.fruit.findUnique({
+    where: {
+      name,
+    },
   });
 }
 
 function insertFruit(fruit: FruitInput) {
-  const id = fruits.length + 1;
-  fruits.push({ ...fruit, id }); // id único
+  return prisma.fruit.create({
+    data: fruit,
+  });
 }
 
 const fruitsRepository = {
   getFruits,
   getSpecificFruit,
   getSpecificFruitByName,
-  insertFruit
-}
+  insertFruit,
+};
 
 export default fruitsRepository;

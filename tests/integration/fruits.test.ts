@@ -1,78 +1,102 @@
-import supertest from 'supertest';
-import app from 'app';
-import fruitsService from 'services/fruits-service';
-import { createFruit } from '../factories/fruits-factory';
+import supertest from "supertest";
+import app from "../../src/app";
+import { FruitInput } from "services/fruits-service";
+import prisma from "database";
+import { buildFruit } from "../factories/fruits-factory";
 
 const server = supertest(app);
 
-describe('Fruits API', () => {
-  describe('POST /fruits', () => {
-    it('should return 201 when inserting a fruit', async () => {
-      const response = await server
-        .post('/fruits')
-        .send({ name: 'Uva', price: 1.99 });
+beforeEach(async () => {
+  await prisma.fruit.deleteMany();
+});
 
-      expect(response.status).toBe(201);
-    });
+describe("POST /fruits", () => {
+  // teste onde tudo funciona
+  it("should create a fruit and return 201", async () => {
+    const fruitInput: FruitInput = {
+      name: "apple",
+      price: 99,
+    };
 
-    it('should return 409 when inserting a fruit that is already registered', async () => {
-      const existingFruit = { name: 'Uva', price: 1.99 };
-      fruitsService.createFruit(existingFruit);
+    const { status } = await server.post("/fruits").send(fruitInput);
+    expect(status).toBe(201);
 
-      const response = await server
-        .post('/fruits')
-        .send(existingFruit);
-
-      expect(response.status).toBe(409);
-    });
-
-    it('should return 422 when inserting a fruit with data missing', async () => {
-      const response = await server
-        .post('/fruits')
-        .send({ name: 'Uva' });
-
-      expect(response.status).toBe(422);
+    // validando se realmente está no banco
+    const fruits = await prisma.fruit.findMany();
+    expect(fruits).toHaveLength(1);
+    const apple = fruits[0];
+    expect(apple).toEqual({
+      id: expect.any(Number),
+      name: fruitInput.name,
+      price: fruitInput.price,
     });
   });
 
-  describe('GET /fruits', () => {
-    it('should return 404 when trying to get a fruit that doesn\'t exist', async () => {
-      const response = await server.get('/fruits/123');
+  it("should return 422 when body is incomplete", async () => {
+    const { status } = await server.post("/fruits").send({ name: "orange" });
+    expect(status).toBe(422);
+  });
 
-      expect(response.status).toBe(404);
+  it("should return 409 when trying to insert the same fruit twice", async () => {
+    // criando cenário de teste
+    const fruit = await buildFruit();
+
+    const { status: newStatus } = await server.post("/fruits").send({
+      name: fruit.name,
+      price: 123,
     });
+    expect(newStatus).toBe(409);
+  });
+});
 
-    it('should return 400 when id param is not valid', async () => {
-      const response = await server.get('/fruits/abc');
+describe("GET /fruits", () => {
+  // GET geralzão
+  // 1 - teste onde as frutas são retornadas com sucesso
+  it("should return all fruits", async () => {
+    await buildFruit("apple");
+    await buildFruit("orange");
+    await buildFruit("strawberry");
+    await buildFruit("banana");
 
-      expect(response.status).toBe(400);
-    });
+    const { body, status } = await server.get("/fruits");
+    expect(status).toBe(200);
+    expect(body).toHaveLength(4);
+    expect(body).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: expect.any(Number),
+          name: expect.any(String),
+          price: expect.any(Number),
+        }),
+      ])
+    );
+  });
 
-    it('should return a fruit given an id', async () => {
-      const newFruit = createFruit('Uva', 1.99);
+  // 1.1 - teste onde não há frutas []
+  it("should return an empty array when there are no fruits", async () => {
+    const { body, status } = await server.get("/fruits");
+    expect(status).toBe(200);
+    expect(body).toHaveLength(0);
+  });
 
-      fruitsService.createFruit(newFruit);
+  // GET :id
+  // 1 - caso onde o id é valido e precisa retornar uma fruta já cadastrada (com os campos corretos)
+  it("should return a fruit", async () => {
+    const fruit = await buildFruit();
+    const { body, status } = await server.get(`/fruits/${fruit.id}`);
+    expect(status).toBe(200);
+    expect(body).toEqual(fruit);
+  });
 
-      const response = await server.get(`/fruits/${newFruit.id}`);
+  // 2 - caso onde o id é inválido (algo que não é número, menor ou igual a zero)
+  it("should return 400 when id param is invalid", async () => {
+    const { status } = await server.get(`/fruits/string`);
+    expect(status).toBe(400);
+  });
 
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual(newFruit);
-    });
-
-    it('should return all fruits', async () => {
-      const fruits = [
-        { name: 'Uva', price: 1.99 },
-        { name: 'Banana', price: 0.99 },
-      ];
-
-      fruits.forEach(fruit => {
-        fruitsService.createFruit(fruit);
-      });
-
-      const response = await server.get('/fruits');
-
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual(fruits);
-    });
+  // 3 - caso onde o id é válido mas não encontra nenhum registro => 404
+  it("should return 404 when fruit does not exists", async () => {
+    const { status } = await server.get(`/fruits/1`);
+    expect(status).toBe(404);
   });
 });
