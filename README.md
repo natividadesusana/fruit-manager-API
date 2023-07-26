@@ -4,20 +4,22 @@ This repository contains a Node.js project that implements an API for managing f
 
 ## Table of Contents
 
-- Endpoints 
-- Setup
-- Usage
-- Error Handling
-- Tests
+- [Endpoints](#endpoints)
+- [Setup](#setup)
+- [Usage](#usage)
+- [Error Handling](#error-handling)
+- [Tests](#tests)
 
-## Endpoints
+<a name="endpoints"></a>
+## Endpoints 
 The API provides the following endpoints:
 
 1. POST /fruits: Creates a new fruit.
 2. GET /fruits: Returns all fruits.
 3. GET /fruits/:id: Returns a specific fruit based on its ID.
 
-## Setup
+<a name="setup"></a>
+## Setup 
 1. Clone the repository:
 
         git clone <repository_url>
@@ -29,14 +31,15 @@ The API provides the following endpoints:
 
 3. Set up your database configuration in the .env file. Ensure you have a running database instance (compatible with Prisma) with the correct credentials.
 
-
-## Usage
+<a name="usage"></a>
+## Usage 
 To start the server, run:
 
     npm start
     
 By default, the server will listen on port 3000. You can modify this in the index.ts file if needed.
 
+<a name="error-handling"></a>
 ## Error Handling
 The API handles errors for various scenarios:
 
@@ -44,7 +47,8 @@ The API handles errors for various scenarios:
 - httpStatus.NOT_FOUND: This status is returned when a requested fruit is not found.
 - httpStatus.CONFLICT: This status is returned when trying to create a fruit that is already registered.
 
-## Tests
+<a name="tests"></a>
+## Tests 
 The project includes a set of test cases to ensure the API endpoints function correctly. The testing framework used is not specified in the provided code. The tests cover the following scenarios:
 
 - POST /fruits:
